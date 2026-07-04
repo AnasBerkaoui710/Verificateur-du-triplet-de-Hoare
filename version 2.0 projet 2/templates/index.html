@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérificateur interactif des triplés de Hoare</title>
+    
+    <!-- Google Fonts: Inter and Fira Code for syntax editor -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Link to custom style.css -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- html2pdf.js library for high-quality report generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="nav-logo">
+                    <i class="fa-solid fa-shield-halved logo-icon"></i>
+                    <div>
+                        <h1 class="logo-title">Hoare Triplet Verifier (A.B 2.0)</h1>
+                        <span class="logo-subtitle">Vérificateur interactif des triplés de Hoare</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle Dark Mode" title="Toggle Dark/Light Mode">
+                    <i class="fa-solid fa-moon moon-icon"></i>
+                    <i class="fa-solid fa-sun sun-icon"></i>
+                </button>
+                <button id="help-btn" class="btn-text" title="Show Documentation">
+                    <i class="fa-solid fa-circle-question"></i> Help
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <main class="dashboard-container">
+        
+        <!-- Left Side: Input Panel & Control Panel -->
+        <section class="panel-left">
+            <div class="card editor-card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="badge badge-primary">P</span>
+                        <h2 class="section-title">Precondition</h2>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-clear" onclick="clearEditor('precondition')" title="Clear precondition">Clear</button>
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="precondition-lines"><div>1</div></div>
+                    <textarea id="precondition-input" class="code-editor" placeholder="e.g. x >= 0" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="card editor-card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="badge badge-accent">C</span>
+                        <h2 class="section-title">Program (Statements)</h2>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-clear" onclick="clearEditor('program')" title="Clear program">Clear</button>
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="program-lines"><div>1</div></div>
+                    <textarea id="program-input" class="code-editor" placeholder="e.g. x := x + 1;" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="card editor-card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="badge badge-secondary">Q</span>
+                        <h2 class="section-title">Postcondition</h2>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-clear" onclick="clearEditor('postcondition')" title="Clear postcondition">Clear</button>
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="postcondition-lines"><div>1</div></div>
+                    <textarea id="postcondition-input" class="code-editor" placeholder="e.g. x > 0" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="card controls-card">
+                <h2 class="section-title mb-4"><i class="fa-solid fa-sliders text-primary"></i> Control Settings</h2>
+                
+                <div class="controls-grid">
+                    <div class="form-group">
+                        <label for="min-val">Min Integer</label>
+                        <input type="number" id="min-val" value="-10" min="-100000" max="100000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="max-val">Max Integer</label>
+                        <input type="number" id="max-val" value="10" min="-100000" max="100000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="num-tests">Number of Tests</label>
+                        <input type="number" id="num-tests" value="100" min="1" max="10000">
+                    </div>
+
+                    <div class="form-group flex-row align-end">
+                        <label class="switch-container">
+                            <input type="checkbox" id="random-tests" checked>
+                            <span class="switch-slider"></span>
+                            <span class="switch-label">Randomize States</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="action-buttons-group">
+                    <button id="verify-btn" class="btn btn-primary btn-lg flex-fill">
+                        <i class="fa-solid fa-play"></i> Verify Triplet
+                    </button>
+                    <button id="reset-btn" class="btn btn-outline">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                    <div class="dropdown-wrapper">
+                        <button id="example-dropdown-btn" class="btn btn-outline dropdown-toggle">
+                            <i class="fa-solid fa-folder-open"></i> Examples <i class="fa-solid fa-chevron-down caret"></i>
+                        </button>
+                        <div id="example-dropdown-menu" class="dropdown-menu">
+                            <a href="#" onclick="loadExample(1)">Example 1: Increment ({x >= 0} x := x + 1 {x > 0})</a>
+                            <a href="#" onclick="loadExample(2)">Example 2: Bad Offset ({x > 5} x := x - 10 {x > 0})</a>
+                            <a href="#" onclick="loadExample(3)">Example 3: absolute Value ({true} if x < 0 then y := -x else y := x end {y >= 0})</a>
+                            <a href="#" onclick="loadExample(4)">Example 4: Loop Multiplier ({x == 0 and y == 5} while y > 0 do x := x + 2; y := y - 1 end {x == 10})</a>
+                            <a href="#" onclick="loadExample(5)">Example 5: Div Zero ({true} x := 10 / y {x > 0})</a>
+                            <a href="#" onclick="loadExample(6)">Example 6: Infinite Loop ({true} while x == 0 do skip end {x != 0})</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Results Panel & Dashboard -->
+        <section class="panel-right">
+            
+            <!-- Default Placeholder / Setup Info -->
+            <div id="results-placeholder" class="card placeholder-card">
+                <i class="fa-solid fa-terminal placeholder-icon"></i>
+                <h3>Ready to Verify</h3>
+                <p>Configure your Precondition, Program, and Postcondition, then click "Verify Triplet" to execute symbolic state verification.</p>
+                <div class="shortcuts-guide">
+                    <h4>Syntax Support Reference</h4>
+                    <ul>
+                        <li><strong>Variables:</strong> Only <code>x</code>, <code>y</code>, <code>z</code> are allowed.</li>
+                        <li><strong>Assignments:</strong> <code>x := x + 1</code> (use <code>:=</code>)</li>
+                        <li><strong>Conditionals:</strong> <code>if x > 0 then x := 1 else x := 2 end</code></li>
+                        <li><strong>Loops:</strong> <code>while x &lt; 5 do x := x + 1 end</code></li>
+                        <li><strong>Skip:</strong> <code>skip</code></li>
+                        <li><strong>Sequences:</strong> Semicolon-separated e.g., <code>x := 1; y := 2;</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Loading Spinner Card -->
+            <div id="results-loading" class="card loading-card hidden">
+                <div class="spinner-outer">
+                    <div class="spinner-inner"></div>
+                    <i class="fa-solid fa-shield-halved spinner-logo"></i>
+                </div>
+                <h3>Verifying Hoare Triplet...</h3>
+                <p>Generating random test states, satisfying preconditions, and running programs.</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- Results Dashboard (Hidden by default) -->
+            <div id="results-dashboard" class="hidden">
+                
+                <!-- Main Status Banner (Valid / Invalid) -->
+                <div id="status-banner" class="status-banner">
+                    <!-- Dynamic status populated by JS -->
+                </div>
+
+                <!-- Statistics Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-light-primary"><i class="fa-solid fa-microchip"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-label">Tests Generated</span>
+                            <span class="stat-value" id="stat-generated">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-light-success"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-label">Tests Executed</span>
+                            <span class="stat-value" id="stat-executed">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-light-warning"><i class="fa-solid fa-ban"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-label">Ignored (Precondition False)</span>
+                            <span class="stat-value" id="stat-ignored">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-light-accent"><i class="fa-solid fa-stopwatch"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-label">Execution Time</span>
+                            <span class="stat-value" id="stat-time">0 ms</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Panel (Download PDF, view details) -->
+                <div class="results-actions-panel">
+                    <h3 class="section-title"><i class="fa-solid fa-square-poll-vertical"></i> Detailed Report</h3>
+                    <button id="download-pdf-btn" class="btn btn-outline btn-sm">
+                        <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+                    </button>
+                </div>
+
+                <!-- Counterexamples / Violations Section -->
+                <div id="counterexamples-section" class="hidden">
+                    <h3 class="section-title text-error mb-3"><i class="fa-solid fa-circle-exclamation"></i> Counterexamples Found</h3>
+                    <div class="counterexamples-list" id="counterexamples-list">
+                        <!-- Dynamic cards inserted here -->
+                    </div>
+                </div>
+
+                <!-- Success State Section -->
+                <div id="success-details-section" class="card success-details-card hidden">
+                    <div class="success-check"><i class="fa-solid fa-circle-check"></i></div>
+                    <h3>Verification Completed Successfully</h3>
+                    <p>All program executions starting in states that satisfied the precondition correctly satisfied the postcondition upon termination. No counterexamples or execution crashes were encountered.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom History & Collapsible Documentation Panel -->
+    <footer class="bottom-panel container">
+        
+        <!-- Collapsible Documentation Panel -->
+        <div class="collapsible-section card mb-4">
+            <div class="collapsible-header" id="docs-toggle-header">
+                <h3><i class="fa-solid fa-book-open"></i> Language Syntax & Rules Documentation</h3>
+                <i class="fa-solid fa-chevron-down collapse-icon"></i>
+            </div>
+            <div class="collapsible-body" id="docs-body">
+                <div class="docs-grid">
+                    <div>
+                        <h4>Arithmetic Expressions</h4>
+                        <ul>
+                            <li>Addition: <code>x + 1</code></li>
+                            <li>Subtraction: <code>y - 5</code></li>
+                            <li>Multiplication: <code>z * 3</code></li>
+                            <li>Division: <code>x / 2</code> (returns integer result)</li>
+                            <li>Modulo: <code>y % 2</code> (remainder)</li>
+                            <li>Grouping: <code>(x + y) * z</code></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Boolean Conditions</h4>
+                        <ul>
+                            <li>Comparisons: <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code></li>
+                            <li>Operators: <code>and</code>, <code>or</code>, <code>not</code></li>
+                            <li>Constants: <code>true</code>, <code>false</code></li>
+                            <li>Example: <code>x &gt; 0 and not (y == 2 or z &lt; 0)</code></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Program Instructions</h4>
+                        <ul>
+                            <li><strong>Assignment:</strong> <code>var := expr</code> (e.g. <code>x := x + 1</code>)</li>
+                            <li><strong>Skip:</strong> <code>skip</code> (no-op)</li>
+                            <li><strong>Sequence:</strong> Separated by semicolons <code>;</code></li>
+                            <li><strong>If Statement:</strong> <code>if cond then stmt else stmt end</code></li>
+                            <li><strong>While Loop:</strong> <code>while cond do stmt end</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsible History Panel -->
+        <div class="collapsible-section card">
+            <div class="collapsible-header" id="history-toggle-header">
+                <h3><i class="fa-solid fa-history"></i> Verification History Log</h3>
+                <span class="history-count badge" id="history-count">0</span>
+                <i class="fa-solid fa-chevron-down collapse-icon"></i>
+            </div>
+            <div class="collapsible-body" id="history-body">
+                <div class="history-table-wrapper">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Precondition</th>
+                                <th>Program (Snippet)</th>
+                                <th>Postcondition</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-list">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No runs logged in this session yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-copyright">
+            <p>Designed and Built by Mr. Anas Berkaoui, "Always believe in Allah"</p>
+        </div>
+    </footer>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Printable Report Template (Hidden, Used for PDF compilation) -->
+    <div id="printable-report" class="printable-report hidden">
+        <!-- Content will be cloned and structured dynamically before converting to PDF -->
+    </div>
+
+    <!-- Custom app.js script link -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
